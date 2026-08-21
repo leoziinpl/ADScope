@@ -102,7 +102,7 @@ Não prometa posicionamento ou vendas garantidas.
         Authorization: `Bearer ${process.env.OPENAI_API_KEY}`
       },
       body: JSON.stringify({
-        model: "gpt-5.6-luna",
+        model: "model: "gpt-5.6",",
         input: prompt
       })
     });
