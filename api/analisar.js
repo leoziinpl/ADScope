@@ -1,6 +1,8 @@
 export default async function handler(req, res) {
   if (req.method !== "POST") {
-    return res.status(405).json({ error: "Método não permitido" });
+    return res.status(405).json({
+      error: "Método não permitido"
+    });
   }
 
   try {
@@ -58,7 +60,8 @@ Faça uma análise prática e específica do anúncio.
 Responda em português do Brasil com:
 
 1. DIAGNÓSTICO
-Explique os principais problemas encontrados.
+Explique os principais problemas encontrados e o que provavelmente está
+impedindo o anúncio de performar melhor.
 
 2. TÍTULO
 Avalie o título atual e crie 5 títulos melhores, pensados para:
@@ -68,71 +71,131 @@ Avalie o título atual e crie 5 títulos melhores, pensados para:
 - clareza
 - conversão
 
-Dê uma nota de 0 a 10 para cada título.
+Dê uma nota de 0 a 10 para cada título e indique qual você usaria.
 
 3. INDEXAÇÃO
 Liste palavras-chave relevantes que podem ajudar o produto a aparecer
 em mais pesquisas dentro da Shopee.
 
+Separe em:
+- palavras principais
+- palavras secundárias
+- características
+- intenção de compra
+
 4. DESCRIÇÃO 10/10
 Crie uma descrição completa, persuasiva e fácil de ler.
-Use emojis com moderação, benefícios, características e chamada para compra.
+Use emojis com moderação.
+Inclua:
+- apresentação do produto
+- benefícios
+- características
+- diferenciais
+- indicação de uso
+- chamada para compra
 
 5. CONVERSÃO
 Analise visualizações, curtidas e compras.
 Explique onde parece estar o gargalo.
 
 6. PREÇO
-Analise a relação entre preço normal e promocional, quando houver dados.
+Analise a relação entre preço normal e promocional quando houver dados.
+Não diga que o preço está caro ou barato em relação ao mercado sem dados
+de concorrentes.
 
 7. MELHORIAS PRIORITÁRIAS
 Liste as melhorias em ordem de prioridade.
 
+Use:
+🔴 prioridade alta
+🟡 prioridade média
+🟢 prioridade baixa
+
 8. PLANO DE AÇÃO
-Diga exatamente o que o vendedor deveria alterar primeiro, segundo e terceiro.
+Diga exatamente o que o vendedor deveria alterar:
+1º primeiro
+2º segundo
+3º terceiro
+
+9. VEREDITO
+Dê uma nota geral de 0 a 10 para o anúncio e explique brevemente.
 
 Não invente dados que não foram fornecidos.
-Não prometa posicionamento ou vendas garantidas.
+Não prometa posicionamento, indexação ou vendas garantidas.
+Se não houver informação suficiente para determinada conclusão,
+diga isso claramente.
 `;
 
-    const response = await fetch("https://api.openai.com/v1/responses", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`
-      },
-      body: JSON.stringify({
-        model: "model: "gpt-5.6",",
-        input: prompt
-      })
-    });
+    const response = await fetch(
+      "https://api.openai.com/v1/responses",
+      {
+        method: "POST",
+
+        headers: {
+          "Content-Type": "application/json",
+          Authorization:
+            `Bearer ${process.env.OPENAI_API_KEY}`
+        },
+
+        body: JSON.stringify({
+          model: "gpt-5.6",
+          input: prompt
+        })
+      }
+    );
 
     const dataIA = await response.json();
 
     if (!response.ok) {
-      console.error("Erro OpenAI:", dataIA);
+      console.error(
+        "Erro OpenAI:",
+        dataIA
+      );
 
-      return res.status(response.status).json({
-        error:
-          dataIA?.error?.message ||
-          "Não foi possível realizar a análise."
-      });
+      return res
+        .status(response.status)
+        .json({
+          error:
+            dataIA?.error?.message ||
+            "Não foi possível realizar a análise."
+        });
     }
 
     const analise =
       dataIA.output
-        ?.flatMap(item => item.content || [])
-        ?.filter(item => item.type === "output_text")
-        ?.map(item => item.text)
-        ?.join("\n") || "A IA não retornou uma análise.";
+        ?.flatMap(
+          item =>
+            item.content || []
+        )
+        ?.filter(
+          item =>
+            item.type ===
+            "output_text"
+        )
+        ?.map(
+          item =>
+            item.text
+        )
+        ?.join("\n") ||
+      "A IA não retornou uma análise.";
 
-    return res.status(200).json({ analise });
+    return res
+      .status(200)
+      .json({
+        analise
+      });
 
   } catch (error) {
-    console.error(error);
+    console.error(
+      "Erro interno:",
+      error
+    );
 
-    return res.status(500).json({
-      error: "Erro interno ao analisar o anúncio."
-    });
+    return res
+      .status(500)
+      .json({
+        error:
+          "Erro interno ao analisar o anúncio."
+      });
   }
 }
