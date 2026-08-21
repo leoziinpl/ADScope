@@ -1299,7 +1299,6 @@ async function renderDetail(i) {
   const a =
     state.ads[i];
 
-
   const c =
     calc(a);
 
@@ -1371,6 +1370,10 @@ async function renderDetail(i) {
 
 
       <div>
+
+        <button id="aiBtn">
+          ✨ Analisar com IA
+        </button>
 
         <button id="edit">
           Editar
@@ -1510,6 +1513,46 @@ async function renderDetail(i) {
 
     </section>
 
+
+    <!-- =============================== -->
+    <!-- ANÁLISE COM IA -->
+    <!-- =============================== -->
+
+    <section
+      class="panel"
+      id="aiPanel"
+      style="display:none;"
+    >
+
+      <div class="panel-head">
+
+        <div>
+
+          <h2>
+            ✨ Análise Inteligente
+          </h2>
+
+          <p>
+            Diagnóstico avançado do seu anúncio
+          </p>
+
+        </div>
+
+      </div>
+
+
+      <div id="aiResult">
+
+        Aguardando análise...
+
+      </div>
+
+    </section>
+
+
+    <!-- =============================== -->
+    <!-- HISTÓRICO -->
+    <!-- =============================== -->
 
     <section class="panel">
 
@@ -1659,11 +1702,241 @@ async function renderDetail(i) {
   `;
 
 
+  // ==========================================
+  // BOTÃO ANALISAR COM IA
+  // ==========================================
+
+  document
+    .querySelector("#aiBtn")
+    .onclick =
+      async () => {
+
+        const btn =
+          document.querySelector(
+            "#aiBtn"
+          );
+
+        const panel =
+          document.querySelector(
+            "#aiPanel"
+          );
+
+        const result =
+          document.querySelector(
+            "#aiResult"
+          );
+
+
+        panel.style.display =
+          "block";
+
+
+        btn.disabled =
+          true;
+
+
+        btn.textContent =
+          "⏳ Analisando...";
+
+
+        result.innerHTML = `
+
+          <div
+            style="
+              padding:20px;
+              text-align:center;
+              line-height:1.6;
+            "
+          >
+
+            <b>
+              🤖 A IA está analisando seu anúncio...
+            </b>
+
+            <br><br>
+
+            Estamos avaliando título,
+            indexação, conversão,
+            preço e oportunidades
+            de melhoria.
+
+          </div>
+        `;
+
+
+        panel.scrollIntoView({
+          behavior: "smooth",
+          block: "start"
+        });
+
+
+        try {
+
+          const response =
+            await fetch(
+              "/api/analisar",
+              {
+
+                method:
+                  "POST",
+
+                headers: {
+
+                  "Content-Type":
+                    "application/json"
+
+                },
+
+                body:
+                  JSON.stringify({
+
+                    titulo:
+                      a.name || "",
+
+                    preco:
+                      a.sale_price || 0,
+
+                    precoPromocional:
+                      a.promo_price || 0,
+
+                    visualizacoes:
+                      a.views || 0,
+
+                    curtidas:
+                      a.likes || 0,
+
+                    compras:
+                      a.purchases || 0,
+
+                    data:
+                      a.ad_created_at || "",
+
+                    link:
+                      a.url || ""
+
+                  })
+
+              }
+            );
+
+
+          let data;
+
+
+          try {
+
+            data =
+              await response.json();
+
+          } catch {
+
+            throw new Error(
+              "A API retornou uma resposta inválida."
+            );
+
+          }
+
+
+          if (!response.ok) {
+
+            throw new Error(
+              data?.error ||
+              "Não foi possível analisar o anúncio."
+            );
+
+          }
+
+
+          if (!data.analise) {
+
+            throw new Error(
+              "A IA não retornou uma análise."
+            );
+
+          }
+
+
+          result.innerHTML = `
+
+            <div
+              style="
+                white-space:pre-wrap;
+                line-height:1.8;
+                font-size:15px;
+                color:#344054;
+              "
+            >
+              ${esc(data.analise)}
+            </div>
+
+          `;
+
+
+        } catch (error) {
+
+
+          console.error(
+            "Erro análise IA:",
+            error
+          );
+
+
+          result.innerHTML = `
+
+            <div
+              style="
+                padding:18px;
+                border-radius:10px;
+                background:#fff1f0;
+                color:#b42318;
+                line-height:1.6;
+              "
+            >
+
+              <b>
+                ⚠️ Não foi possível concluir a análise.
+              </b>
+
+              <br><br>
+
+              ${esc(
+                error.message ||
+                "Erro desconhecido."
+              )}
+
+            </div>
+
+          `;
+
+
+        } finally {
+
+
+          btn.disabled =
+            false;
+
+
+          btn.textContent =
+            "✨ Analisar com IA";
+
+        }
+
+      };
+
+
+  // ==========================================
+  // VOLTAR
+  // ==========================================
+
   document
     .querySelector("#back")
     .onclick =
       renderDashboard;
 
+
+  // ==========================================
+  // EDITAR
+  // ==========================================
 
   document
     .querySelector("#edit")
@@ -1671,6 +1944,10 @@ async function renderDetail(i) {
       () =>
         renderForm(i);
 
+
+  // ==========================================
+  // EXCLUIR
+  // ==========================================
 
   document
     .querySelector("#delete")
@@ -1713,9 +1990,9 @@ async function renderDetail(i) {
         await loadAds();
 
         renderDashboard();
+
       };
 }
-
 
 // ==========================================
 // INICIAR ADSCOPE
