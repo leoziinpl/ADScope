@@ -17,9 +17,9 @@ export default async function handler(req, res) {
       link = ""
     } = req.body || {};
 
-    if (!process.env.OPENAI_API_KEY) {
+    if (!process.env.GEMINI_API_KEY) {
       return res.status(500).json({
-        error: "OPENAI_API_KEY não configurada."
+        error: "GEMINI_API_KEY não configurada."
       });
     }
 
@@ -60,8 +60,7 @@ Faça uma análise prática e específica do anúncio.
 Responda em português do Brasil com:
 
 1. DIAGNÓSTICO
-Explique os principais problemas encontrados e o que provavelmente está
-impedindo o anúncio de performar melhor.
+Explique os principais problemas encontrados e o que provavelmente está impedindo o anúncio de performar melhor.
 
 2. TÍTULO
 Avalie o título atual e crie 5 títulos melhores, pensados para:
@@ -74,8 +73,7 @@ Avalie o título atual e crie 5 títulos melhores, pensados para:
 Dê uma nota de 0 a 10 para cada título e indique qual você usaria.
 
 3. INDEXAÇÃO
-Liste palavras-chave relevantes que podem ajudar o produto a aparecer
-em mais pesquisas dentro da Shopee.
+Liste palavras-chave relevantes que podem ajudar o produto a aparecer em mais pesquisas dentro da Shopee.
 
 Separe em:
 - palavras principais
@@ -100,8 +98,7 @@ Explique onde parece estar o gargalo.
 
 6. PREÇO
 Analise a relação entre preço normal e promocional quando houver dados.
-Não diga que o preço está caro ou barato em relação ao mercado sem dados
-de concorrentes.
+Não diga que o preço está caro ou barato em relação ao mercado sem dados de concorrentes.
 
 7. MELHORIAS PRIORITÁRIAS
 Liste as melhorias em ordem de prioridade.
@@ -122,23 +119,32 @@ Dê uma nota geral de 0 a 10 para o anúncio e explique brevemente.
 
 Não invente dados que não foram fornecidos.
 Não prometa posicionamento, indexação ou vendas garantidas.
-Se não houver informação suficiente para determinada conclusão,
-diga isso claramente.
+Se não houver informação suficiente para determinada conclusão, diga isso claramente.
 `;
 
+    const model = "gemini-2.5-flash";
+
     const response = await fetch(
-      "https://api.openai.com/v1/responses",
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(process.env.GEMINI_API_KEY.trim())}`,
       {
         method: "POST",
-
         headers: {
-          "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.OPENAI_API_KEY.trim()}`
+          "Content-Type": "application/json"
         },
-
         body: JSON.stringify({
-          model: "gpt-5.6",
-          input: prompt
+          contents: [
+            {
+              role: "user",
+              parts: [
+                {
+                  text: prompt
+                }
+              ]
+            }
+          ],
+          generationConfig: {
+            temperature: 0.7
+          }
         })
       }
     );
@@ -146,55 +152,36 @@ diga isso claramente.
     const dataIA = await response.json();
 
     if (!response.ok) {
-      console.error(
-        "Erro OpenAI:",
-        dataIA
-      );
+      console.error("Erro Gemini:", dataIA);
 
-      return res
-        .status(response.status)
-        .json({
-          error:
-            dataIA?.error?.message ||
-            "Não foi possível realizar a análise."
-        });
+      return res.status(response.status).json({
+        error:
+          dataIA?.error?.message ||
+          "Não foi possível realizar a análise."
+      });
     }
 
     const analise =
-      dataIA.output
-        ?.flatMap(
-          item =>
-            item.content || []
-        )
-        ?.filter(
-          item =>
-            item.type ===
-            "output_text"
-        )
-        ?.map(
-          item =>
-            item.text
-        )
-        ?.join("\n") ||
-      "A IA não retornou uma análise.";
+      dataIA?.candidates?.[0]?.content?.parts
+        ?.map((part) => part.text || "")
+        ?.join("\n")
+        ?.trim();
 
-    return res
-      .status(200)
-      .json({
-        analise
+    if (!analise) {
+      return res.status(500).json({
+        error: "A IA não retornou uma análise."
       });
+    }
+
+    return res.status(200).json({
+      analise
+    });
 
   } catch (error) {
-    console.error(
-      "Erro interno:",
-      error
-    );
+    console.error("Erro interno:", error);
 
-    return res
-      .status(500)
-      .json({
-        error:
-          "Erro interno ao analisar o anúncio."
-      });
+    return res.status(500).json({
+      error: "Erro interno ao analisar o anúncio."
+    });
   }
 }
