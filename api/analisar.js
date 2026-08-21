@@ -122,7 +122,7 @@ Não prometa posicionamento, indexação ou vendas garantidas.
 Se não houver informação suficiente para determinada conclusão, diga isso claramente.
 `;
 
-    const model = "gemini-2.5-flash";
+    const model = "gemini-3.6-flash";
 
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(process.env.GEMINI_API_KEY.trim())}`,
@@ -142,9 +142,6 @@ Se não houver informação suficiente para determinada conclusão, diga isso cl
               ]
             }
           ],
-          generationConfig: {
-            temperature: 0.7
-          }
         })
       }
     );
